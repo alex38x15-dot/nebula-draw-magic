@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ImageGenerator } from '@/components/ImageGenerator';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
@@ -63,15 +64,11 @@ const Index = () => {
             <CardHeader>
               <CardTitle>Generate Amazing Images with AI</CardTitle>
               <CardDescription>
-                Use the power of Gemini AI to create stunning images from text descriptions
+                Use the power of OpenAI to create stunning images from text descriptions
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  Image generation functionality will be implemented next!
-                </p>
-              </div>
+              <ImageGenerator />
             </CardContent>
           </Card>
         </div>
