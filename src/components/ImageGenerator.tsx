@@ -3,14 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const ImageGenerator = () => {
   const [prompt, setPrompt] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [revisedPrompt, setRevisedPrompt] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -26,7 +28,7 @@ export const ImageGenerator = () => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { prompt }
+        body: { prompt, isPublic }
       });
 
       if (error) {
@@ -38,7 +40,6 @@ export const ImageGenerator = () => {
       }
 
       setGeneratedImage(data.imageUrl);
-      setRevisedPrompt(data.revisedPrompt);
       
       toast({
         title: "Success",
@@ -71,6 +72,18 @@ export const ImageGenerator = () => {
             rows={3}
           />
         </div>
+        
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="public-mode"
+            checked={isPublic}
+            onCheckedChange={setIsPublic}
+          />
+          <Label htmlFor="public-mode" className="text-sm font-medium">
+            Make image public
+          </Label>
+        </div>
+        
         <Button 
           onClick={handleGenerate} 
           disabled={isGenerating || !prompt.trim()}
@@ -99,13 +112,11 @@ export const ImageGenerator = () => {
               alt="Generated image"
               className="w-full rounded-lg shadow-md"
             />
-            {revisedPrompt && (
-              <div className="mt-4 p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Revised prompt:</strong> {revisedPrompt}
-                </p>
-              </div>
-            )}
+            <div className="mt-4 p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Status:</strong> {isPublic ? 'Public' : 'Private'} image generated with Gemini AI
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

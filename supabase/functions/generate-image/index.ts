@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const googleAIApiKey = Deno.env.get('GOOGLE_AI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,11 +15,11 @@ serve(async (req) => {
   }
 
   try {
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY is not configured');
+    if (!googleAIApiKey) {
+      throw new Error('GOOGLE_AI_API_KEY is not configured');
     }
 
-    const { prompt } = await req.json();
+    const { prompt, isPublic = false } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -31,36 +31,50 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating image with prompt:', prompt);
+    console.log('Generating image with prompt:', prompt, 'isPublic:', isPublic);
 
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${googleAIApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: prompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'high',
-        output_format: 'png'
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 4096,
+        }
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
+      console.error('Google AI API error:', errorData);
       throw new Error(errorData.error?.message || 'Failed to generate image');
     }
 
     const data = await response.json();
     console.log('Image generation successful');
 
+    // Extract the base64 image from the response
+    const imageData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!imageData) {
+      throw new Error('No image data received from Gemini');
+    }
+
+    // Convert base64 to data URL
+    const imageUrl = `data:image/png;base64,${imageData}`;
+
     return new Response(JSON.stringify({ 
-      imageUrl: data.data[0].url,
-      revisedPrompt: data.data[0].revised_prompt 
+      imageUrl,
+      isPublic,
+      prompt 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
