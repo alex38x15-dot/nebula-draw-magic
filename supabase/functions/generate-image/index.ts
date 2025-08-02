@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { GoogleGenAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
 const googleAIApiKey = Deno.env.get('GOOGLE_AI_API_KEY');
 
@@ -62,37 +63,26 @@ serve(async (req) => {
 
     console.log('Generating image with prompt:', prompt, 'isPublic:', isPublic, 'User ID:', user.id);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${googleAIApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 4096,
-        }
-      }),
+    // Initialize GoogleGenAI client
+    const ai = new GoogleGenAI({ apiKey: googleAIApiKey });
+
+    // Generate image using GoogleGenAI client
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-preview-image-generation',
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        responseMimeType: "image/jpeg"
+      }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Google AI API error:', errorData);
-      throw new Error(errorData.error?.message || 'Failed to generate image');
-    }
-
-    const data = await response.json();
     console.log('Image generation successful');
 
     // Extract the base64 image from the response
-    const imageData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    const imageData = response.response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (!imageData) {
       throw new Error('No image data received from Gemini');
     }
