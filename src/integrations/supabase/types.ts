@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_images: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          image_url: string
+          is_public: boolean
+          prompt: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          image_url: string
+          is_public?: boolean
+          prompt: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          image_url?: string
+          is_public?: boolean
+          prompt?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

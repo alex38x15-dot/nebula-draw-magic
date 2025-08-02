@@ -27,8 +27,17 @@ export const ImageGenerator = () => {
 
     setIsGenerating(true);
     try {
+      // Get the current session to send auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please sign in to generate images');
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { prompt, isPublic }
+        body: { prompt, isPublic },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
@@ -43,7 +52,7 @@ export const ImageGenerator = () => {
       
       toast({
         title: "Success",
-        description: "Image generated successfully!"
+        description: `Image generated and saved successfully! ${isPublic ? 'Public' : 'Private'} image created.`
       });
     } catch (error: any) {
       console.error('Error generating image:', error);
